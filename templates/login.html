@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <title>أمان أبشر - تسجيل الدخول</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="absher-bg">
+
+<!-- language switch -->
+<div class="lang-switch">
+    <button type="button" onclick="setLang('ar')">العربية</button>
+    <button type="button" onclick="setLang('en')">English</button>
+</div>
+
+<div class="page-wrapper">
+    <div class="absher-card">
+
+        <!-- left side -->
+        <section class="card-left">
+            <div class="logo-circle-big">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Absher Aman">
+            </div>
+
+            <h1 class="title-main" data-ar="أمان أبشر" data-en="Aman Absher"></h1>
+
+            <p class="subtitle-main"
+               data-ar="نظام المناطق الأمنية ومحرك المخاطر الذكي."
+               data-en="Security zones system with an intelligent risk engine."></p>
+        </section>
+
+        <!-- right side (form) -->
+        <section class="card-right">
+            <h2 class="form-title" data-ar="تسجيل الدخول" data-en="Login"></h2>
+            <p class="form-subtitle"
+               data-ar="من فضلك ادخل بيانات الدخول لحسابك في أبشر أمان."
+               data-en="Please enter your credentials to access Absher Aman."></p>
+
+            <!-- LOGIN FORM -->
+            <form method="POST" id="login-form">
+
+                <label class="field-label" data-ar="رقم الهوية / الإقامة" data-en="ID / Iqama Number"></label>
+                <input type="text" name="username" required placeholder="1234567890">
+
+                <label class="field-label" data-ar="كلمة المرور" data-en="Password"></label>
+                <input type="password" name="password" required>
+
+                <div class="remember-row">
+                    <label class="remember-label">
+                        <input type="checkbox">
+                        <span data-ar="تذكرني" data-en="Remember me"></span>
+                    </label>
+                    <a href="#" class="link" data-ar="نسيت كلمة المرور؟" data-en="Forgot password?"></a>
+                </div>
+
+                <div class="security-box">
+                    <div class="security-header">
+                        <span class="dot"></span>
+                        <span data-ar="مستوى الأمان الحالي" data-en="Current security level"></span>
+                    </div>
+                    <p class="security-text"
+                       data-ar="سيتم حساب مستوى الأمان بعد إدخال بياناتك والضغط على زر تسجيل الدخول."
+                       data-en="Your security score will be calculated after you submit your login information."></p>
+
+                    <div class="score-line">
+                        <span data-ar="درجة الأمان الافتراضية:" data-en="Default score:"></span>
+                        <strong>10 (Low)</strong>
+                    </div>
+                </div>
+
+                {% if error %}
+                <div class="error-box">{{ error }}</div>
+                {% endif %}
+
+                <!-- BUTTONS AREA -->
+                <div class="form-buttons">
+                    <button type="submit" class="primary-btn"
+                            data-ar="تأكيد وتسجيل الدخول"
+                            data-en="Confirm & Login"></button>
+                </div>
+
+                <!-- hidden fingerprint fields -->
+                <input type="hidden" id="real_ip" name="real_ip">
+                <input type="hidden" id="real_city" name="real_city">
+                <input type="hidden" id="real_country" name="real_country">
+
+                <input type="hidden" id="device_name" name="device_name">
+                <input type="hidden" id="device_type" name="device_type">
+                <input type="hidden" id="device_os" name="device_os">
+                <input type="hidden" id="device_browser" name="device_browser">
+                <input type="hidden" id="device_raw" name="device_raw">
+
+                <input type="hidden" id="cpu_count" name="cpu_count">
+                <input type="hidden" id="ram_gb" name="ram_gb">
+                <input type="hidden" id="screen_res" name="screen_res">
+                <input type="hidden" id="pixel_ratio" name="pixel_ratio">
+                <input type="hidden" id="color_depth" name="color_depth">
+
+                <input type="hidden" id="timezone" name="timezone">
+                <input type="hidden" id="language" name="language">
+                <input type="hidden" id="gpu_vendor" name="gpu_vendor">
+                <input type="hidden" id="gpu_model" name="gpu_model">
+                <input type="hidden" id="canvas_fp" name="canvas_fp">
+                <input type="hidden" id="lat" name="lat">
+                <input type="hidden" id="lon" name="lon">
+
+            </form>
+        </section>
+    </div>
+
+    <p class="disclaimer"
+       data-ar="هذا النموذج ليس بوابة أبشر الرسمية، وإنما نموذج تجريبي لأغراض تعليمية فقط."
+       data-en="This is not the official Absher portal; it is a mock-up created solely for educational purposes.">
+    </p>
+</div>
+
+
+<!-- ===================== -->
+<!-- LANGUAGE + FINGERPRINT -->
+<!-- ===================== -->
+
+<script>
+function setLang(lang) {
+    const root = document.documentElement;
+    root.lang = lang;
+    root.dir = lang === "ar" ? "rtl" : "ltr";
+
+    document.querySelectorAll("[data-ar]").forEach(el => {
+        el.textContent = (lang === "ar")
+            ? el.getAttribute("data-ar")
+            : el.getAttribute("data-en");
+    });
+}
+
+async function fetchNetworkInfo() {
+    try {
+        const res = await fetch("https://ipapi.co/json/");
+        const data = await res.json();
+
+        real_ip.value = data.ip || "";
+        real_city.value = data.city || "";
+        real_country.value = data.country_name || "";
+
+    } catch (err) {
+        console.warn("⚠ IP fetch blocked");
+    }
+}
+
+
+function fillDeviceInfo() {
+    const ua = navigator.userAgent;
+
+    device_type.value = /mobile/i.test(ua) ? "Mobile" : "Desktop";
+
+    device_name.value =
+        /iPhone/i.test(ua) ? "iPhone" :
+        /Android/i.test(ua) ? "Android" :
+        /Windows/i.test(ua) ? "Windows PC" :
+        "Unknown";
+
+    device_os.value = navigator.platform;
+    device_browser.value = ua;
+    device_raw.value = ua;
+
+    cpu_count.value = navigator.hardwareConcurrency;
+    ram_gb.value = navigator.deviceMemory;
+    screen_res.value = screen.width + "x" + screen.height;
+    pixel_ratio.value = devicePixelRatio;
+    color_depth.value = screen.colorDepth;
+    timezone.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    language.value = navigator.language;
+}
+
+function fillGPUInfo() {
+    try {
+        const gl = document.createElement("canvas").getContext("webgl");
+        const info = gl.getExtension("WEBGL_debug_renderer_info");
+        gpu_vendor.value = gl.getParameter(info.UNMASKED_VENDOR_WEBGL);
+        gpu_model.value = gl.getParameter(info.UNMASKED_RENDERER_WEBGL);
+    } catch {}
+}
+
+function fillCanvasFingerprint() {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    ctx.fillText("aman-absher", 10, 40);
+    canvas_fp.value = canvas.toDataURL().substring(0, 100);
+}
+
+function fillLocation() {
+    navigator.geolocation?.getCurrentPosition(pos => {
+        lat.value = pos.coords.latitude;
+        lon.value = pos.coords.longitude;
+    });
+}
+
+window.onload = () => {
+    setLang("ar");
+    fetchNetworkInfo();
+    fillDeviceInfo();
+    fillGPUInfo();
+    fillCanvasFingerprint();
+    fillLocation();
+};
+</script>
+
+
+<!-- ===================== -->
+<!-- DEVELOPER MODE (FULL) -->
+<!-- ===================== -->
+
+<style>
+#dev-toggle {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 70px;
+    height: 32px;
+    background: #062a20;
+    border-radius: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 3px;
+    z-index: 9999;
+}
+#dev-toggle.active { background: #1c6b4f; }
+
+#dev-toggle .knob {
+    width: 28px;
+    height: 28px;
+    background: #6ce49b;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform .3s;
+    font-size: 11px;
+}
+#dev-toggle.active .knob { transform: translateX(38px); }
+
+#dev-panel {
+    position: fixed;
+    bottom: 60px;
+    left: 20px;
+    width: 320px;
+    max-height: 85vh;
+    background: white;
+    border-radius: 16px;
+    padding: 18px;
+    overflow-y: auto;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+    z-index: 9999;
+}
+#dev-panel.hidden { display: none; }
+#dev-panel label { font-size: 13px; margin-top: 8px; display: block; }
+#dev-panel input, #dev-panel select {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    margin-bottom: 6px;
+}
+</style>
+
+<!-- Dev toggle -->
+<div id="dev-toggle"><div class="knob">&lt;/&gt;</div></div>
+
+<!-- Dev panel -->
+<div id="dev-panel" class="hidden">
+    <h3>وضع المطوّر</h3>
+
+    <label>IP Address</label>
+    <input id="dev-ip">
+
+    <label>City</label>
+    <input id="dev-city">
+
+    <label>Country</label>
+    <input id="dev-country">
+
+    <label>VPN Enabled</label>
+    <select id="dev-vpn">
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+    </select>
+
+    <label>Device Type</label>
+    <select id="dev-device-type">
+        <option value="Desktop">Desktop</option>
+        <option value="Mobile">Mobile</option>
+    </select>
+
+    <label>Device Name</label>
+    <input id="dev-device-name">
+
+    <label>Latitude</label>
+    <input id="dev-lat">
+
+    <label>Longitude</label>
+    <input id="dev-lon">
+
+    <label>Typing speed</label>
+    <input id="dev-typing" type="number">
+
+    <label>Failed attempts</label>
+    <input id="dev-failed" type="number">
+
+    <label>Login hour (0-23)</label>
+    <input id="dev-hour" type="number">
+</div>
+
+<script>
+const toggleDev = document.getElementById("dev-toggle");
+const panelDev = document.getElementById("dev-panel");
+
+toggleDev.onclick = () => {
+    toggleDev.classList.toggle("active");
+    panelDev.classList.toggle("hidden");
+};
+
+function applyDevMode() {
+    if (!toggleDev.classList.contains("active")) return;
+
+    real_ip.value = dev-ip.value || real_ip.value;
+    real_city.value = dev-city.value || real_city.value;
+    real_country.value = dev-country.value || real_country.value;
+
+    device_type.value = dev-device-type.value || device_type.value;
+    device_name.value = dev-device-name.value || device_name.value;
+
+    lat.value = dev-lat.value || lat.value;
+    lon.value = dev-lon.value || lon.value;
+
+    if (dev-typing.value) cpu_count.value = dev-typing.value;
+    if (dev-failed.value) ram_gb.value = dev-failed.value;
+    if (dev-hour.value) timezone.value = dev-hour.value;
+
+    if (dev-vpn.value === "yes") device_raw.value += " VPN_ACTIVE";
+}
+
+document.getElementById("login-form").addEventListener("submit", () => {
+    applyDevMode();
+});
+
+document.getElementById("dev-toggle").onclick = () => {
+    const panel = document.getElementById("dev-panel");
+    const toggle = document.getElementById("dev-toggle");
+
+    toggle.classList.toggle("active");
+    panel.style.display = toggle.classList.contains("active") ? "block" : "none";
+};
+</script>
+
+</script>
+
+</body>
+</html>
